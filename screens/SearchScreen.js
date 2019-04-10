@@ -1,31 +1,21 @@
 import React from "react";
 import {
-  Image,
   Platform,
-  ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
-  TextInput
 } from "react-native";
-import { WebBrowser } from "expo";
-import { SearchBar } from "react-native-elements";
 import ResultListView from "../components/ResultListView";
-import FoodSearchBar from "../components/FoodSearchBar";
 
 export default class SearchScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       selectedItem: null,
-      // searchText: "",
       error: "no error"
     };
     
     this.updateSelectedItem = this.updateSelectedItem.bind(this);
   }
-  //url = url.replace(/\/[^\/]*$/, "/150/150/resizescale/" + url.substr(url.lastIndexOf('/') + 1))
 
   static navigationOptions = {
     header: null

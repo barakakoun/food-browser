@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
+  Dimensions,
 } from "react-native";
 import axios from "axios";
 import ResultListItem from "./ResultListItem";
@@ -20,7 +21,8 @@ const HEADERS = {
   "X-Requested-With": "XMLHttpRequest"
 };
 
-const ITEMS_LIMIT = 5;
+const ITEMS_LIMIT = 10;
+
 
 export default class ResultListView extends React.Component {
   constructor(props) {
@@ -30,16 +32,12 @@ export default class ResultListView extends React.Component {
       error: null,
       chosenItem: null,
       offset: 0,
-      loading: true,
-      fetching_from_server: false,
       searchText: "",
-      // refreshing: false,
+      refreshing: false,
     };
 
     this.getFoodItems = this.getFoodItems.bind(this);
-    // this.loadMoreData = this.loadMoreData.bind(this);
     this.updateSearch = this.updateSearch.bind(this);
-    
   }
 
 
@@ -58,12 +56,16 @@ export default class ResultListView extends React.Component {
   // }
 
   getFoodItems() {
-    axios
-      .post(
+    var searchText = this.state.searchText;
+
+    // Mechanism to make sure we don't fetch while there's request in process
+    if (!this.state.refreshing) {
+      this.setState({refreshing: true}, () => 
+      axios.post(
         `${"https://cors-anywhere.herokuapp.com/"}https://iw2tu1r0d6.execute-api.us-west-2.amazonaws.com/prod/v2/fooditems/_search`,
         {
           nutrinoId: "BARAK",
-          text: this.state.searchText,
+          text: searchText,
           size: ITEMS_LIMIT,
           offset: this.state.offset
         },
@@ -73,34 +75,33 @@ export default class ResultListView extends React.Component {
         let foodItems = res.data.foodItems;
         // var newList = foodItems.map(o => ({...o, newImage: changeImageUrl(o.images[0])}));
 
-        // On first fetching, we change the loading indicator to false after we done
-        if (this.state.offset === 0) {
-          this.setState({ loading: false });
-        } else {
-          this.setState({ fetching_from_server: false });
-        }
-
-        // Increasing the offset for the next loading
+        // Making sure we are changing the state only if the user didn't type another search
+        // term by the time we proccessed the previous search term
+        if (searchText === this.state.searchText) 
         this.setState(state => ({
           foodItems: [...state.foodItems, ...foodItems],
-          offset: state.offset + ITEMS_LIMIT,
-          // refreshing: false
+          offset: state.offset + ITEMS_LIMIT, // Increasing the offset for the next loading
+          refreshing: false,
         }));
       })
       .catch(error => {
-        this.setState({ error: "There was a problem getting data", loading: false,  fetching_from_server: false });
-      });
+        this.setState({ error: "There was a problem getting data", refreshing: false });
+      }));
+    }
   }
 
   
   updateSearch = searchText => {
-    this.setState({ searchText, foodItems: [], offset: 0 }, () => {
+    this.setState({ searchText, 
+                    foodItems: [], 
+                    refreshing: false, // So it will override current loading
+                    offset: 0}, () => {
       if (this.state.searchText !== "") this.getFoodItems();
     });
   };
 
   componentDidMount() {
-    this.getFoodItems();
+    // this.getFoodItems();
   }
 
   onChangeSelectedItem(chosenItem) {
@@ -108,49 +109,33 @@ export default class ResultListView extends React.Component {
     this.props.updateSelectedItem(chosenItem);
   }
 
+
   render() {
     if (this.state.error) {
       <Text>{this.state.error}</Text>;
     }
 
-    // if (this.state.loading && this.state.searchText) {
-    //   return (
-    //     <ActivityIndicator
-    //       size="large"
-    //       color="#0000ff"
-    //       style={{ marginTop: 50 }}
-    //     />
-    //   );
-    // }
-
     return (
       <View style={{flex:1}} >
       <ScrollView contentContainerStyle={styles.contentContainer}
       stickyHeaderIndices={[1]}
-      // overScrollMode={"never"}
-                  // refreshControl={
-                  //   <RefreshControl
-                  //     refreshing={this.state.refreshing}
-                  //     onRefresh={this.getFoodItems}
-                  //   />
-                  // }
+      onScroll={(e)=>{
+        // If we are close to the end of the list, we will fetch more data from the server
+        var windowHeight = Dimensions.get('window').height,
+            height = e.nativeEvent.contentSize.height,
+            offset = e.nativeEvent.contentOffset.y;
+        if (( windowHeight + offset >= height ) && this.state.foodItems.length){
+          this.getFoodItems();
+        }
+    }}
+      scrollEventThrottle={5000}
       >
       <View style={styles.selectedContainer}>
           {this.state.chosenItem? <Image source={{ uri: this.state.chosenItem.images[0] }} style={styles.itemImage} /> : null}
         </View>
       {/* {this.state.chosenItem? <Image source={{ uri: this.state.chosenItem.images[0] }} style={styles.itemImage} /> : null} */}
         <FoodSearchBar updateSearch={this.updateSearch} />
-        {(this.state.loading && this.state.searchText)?
-         (
-          <ActivityIndicator
-            size="large"
-            color="#0000ff"
-            style={{ marginTop: 50 }}
-          />
-        ) 
-        :
-        
-        this.state.foodItems.map(currentFoodItem => {
+        {this.state.foodItems.map(currentFoodItem => {
           return (
             <TouchableOpacity
               key={currentFoodItem.id}
@@ -165,25 +150,19 @@ export default class ResultListView extends React.Component {
               />
             </TouchableOpacity>
           );
-        })}
+        })
+        }
+
+        { this.state.refreshing ? 
+            <ActivityIndicator
+            size="large"
+            color="#0000ff"
+            style={{ marginTop: 10 }}
+          />
+          : null
+        }
 
         
-        { // Can only load more if first load occured
-          !this.state.loading ? (
-          <View style={styles.footer}>
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={this.getFoodItems}
-              //On Click of button calling loadMoreData function to load more data
-              style={styles.loadMoreBtn}
-            >
-              <Text style={styles.btnText}>Load More</Text>
-              {this.state.fetching_from_server ? (
-              <ActivityIndicator color="black" style={{ marginLeft: 8 }} />
-            ) : null}
-            </TouchableOpacity>
-          </View>
-        ) : null}
       </ScrollView>
       </View>
     );
