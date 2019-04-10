@@ -6,29 +6,19 @@ export default class SearchScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedItem: null,
       error: "no error"
     };
-
-    this.updateSelectedItem = this.updateSelectedItem.bind(this);
   }
 
   static navigationOptions = {
     header: null
   };
 
-  updateSelectedItem = selectedItem => {
-    this.setState({ selectedItem });
-  };
-
   render() {
     return (
       <View style={styles.container}>
         <View style={styles.getStartedContainer}>
-          <ResultListView
-            searchTerm={this.state.searchText}
-            updateSelectedItem={this.updateSelectedItem}
-          />
+          <ResultListView />
         </View>
       </View>
     );

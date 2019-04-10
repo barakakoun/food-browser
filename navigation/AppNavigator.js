@@ -7,9 +7,8 @@ import HomeScreen from '../screens/HomeScreen';
 
 
 const MainNavigator = createStackNavigator({
-  // Home: {screen: HomeScreen},
-  Search: {screen: SearchScreen},
   Home: {screen: HomeScreen},
+  Search: {screen: SearchScreen},
 });
 
 export default createAppContainer(MainNavigator);
