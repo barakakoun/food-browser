@@ -94,7 +94,6 @@ export default class ResultListView extends React.Component {
     if (this.state.chosenItem && (chosenItem.id === this.state.chosenItem.id)) this.setState({ chosenItem : null });
     else {
       this.setState({ chosenItem });
-      this.props.updateSelectedItem(chosenItem);
     }
   }
 
