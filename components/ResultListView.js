@@ -34,6 +34,7 @@ export default class ResultListView extends React.Component {
       offset: 0,
       searchText: "",
       refreshing: false,
+      chosenItem : null,
     };
 
     this.getFoodItems = this.getFoodItems.bind(this);
@@ -94,19 +95,20 @@ export default class ResultListView extends React.Component {
   updateSearch = searchText => {
     this.setState({ searchText, 
                     foodItems: [], 
+                    chosenItem : null,
                     refreshing: false, // So it will override current loading
                     offset: 0}, () => {
       if (this.state.searchText !== "") this.getFoodItems();
     });
   };
 
-  componentDidMount() {
-    // this.getFoodItems();
-  }
-
   onChangeSelectedItem(chosenItem) {
-    this.setState({ chosenItem });
-    this.props.updateSelectedItem(chosenItem);
+    // If we chose a chosen item - we cancel the choice
+    if (this.state.chosenItem && (chosenItem.id === this.state.chosenItem.id)) this.setState({ chosenItem : null });
+    else {
+      this.setState({ chosenItem });
+      this.props.updateSelectedItem(chosenItem);
+    }
   }
 
 
