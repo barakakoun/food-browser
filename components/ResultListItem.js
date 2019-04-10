@@ -37,9 +37,6 @@ export default class ResultListItem extends React.Component {
         <Text style={styles.itemText}>
           {this.toTitleCase(foodItem.displayName)}
         </Text>
-        {/* <Text>{url}</Text> */}
-
-        {/* {this.props.isChosen?  */}
         <View style={{ marginLeft: "auto" }}>
           <Icon.Button
             name="check"
@@ -48,7 +45,6 @@ export default class ResultListItem extends React.Component {
             size={30}
           />
         </View>
-        {/* //  : null} */}
       </View>
     );
   }

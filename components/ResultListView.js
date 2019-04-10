@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Image,
-  RefreshControl,
   Dimensions,
 } from "react-native";
 import axios from "axios";
@@ -22,7 +21,6 @@ const HEADERS = {
 };
 
 const ITEMS_LIMIT = 10;
-
 
 export default class ResultListView extends React.Component {
   constructor(props) {
@@ -41,21 +39,7 @@ export default class ResultListView extends React.Component {
     this.updateSearch = this.updateSearch.bind(this);
   }
 
-
-  changeImageUrl = url =>
-    url.replace(
-      /\/[^\/]*$/,
-      "/50/50/resizescale/" + url.substr(url.lastIndexOf("/") + 1)
-    );
-
-
-  // Function called when "load more" is needed
-  // loadMoreData() {
-  //   this.setState({fetching_from_server: true}, ()=>{
-  //     this.getFoodItems();
-  //   });
-  // }
-
+  // Method handeling the request
   getFoodItems() {
     var searchText = this.state.searchText;
 
@@ -74,13 +58,12 @@ export default class ResultListView extends React.Component {
       )
       .then(res => {
         let foodItems = res.data.foodItems;
-        // var newList = foodItems.map(o => ({...o, newImage: changeImageUrl(o.images[0])}));
 
         // Making sure we are changing the state only if the user didn't type another search
         // term by the time we proccessed the previous search term
         if (searchText === this.state.searchText) 
         this.setState(state => ({
-          foodItems: [...state.foodItems, ...foodItems],
+          foodItems: [...state.foodItems, ...foodItems], // Adding the new food items to the array
           offset: state.offset + ITEMS_LIMIT, // Increasing the offset for the next loading
           refreshing: false,
         }));
@@ -92,6 +75,8 @@ export default class ResultListView extends React.Component {
   }
 
   
+  // Handles when a user changes the search text
+  // Initiate the states and fetch 
   updateSearch = searchText => {
     this.setState({ searchText, 
                     foodItems: [], 
@@ -102,6 +87,8 @@ export default class ResultListView extends React.Component {
     });
   };
 
+  // When user choose a food item, it setted as the chosen.
+  // If he taps it again, it clears the chosen item..
   onChangeSelectedItem(chosenItem) {
     // If we chose a chosen item - we cancel the choice
     if (this.state.chosenItem && (chosenItem.id === this.state.chosenItem.id)) this.setState({ chosenItem : null });
@@ -119,8 +106,13 @@ export default class ResultListView extends React.Component {
 
     return (
       <View style={{flex:1}} >
+      
+      {/* If there is a chosen item, show its image */}
+      <View style={styles.selectedContainer}>
+          {this.state.chosenItem? <Image source={{ uri: this.state.chosenItem.images[0] }} style={styles.itemImage} /> : null}
+        </View>
       <ScrollView contentContainerStyle={styles.contentContainer}
-      stickyHeaderIndices={[1]}
+      stickyHeaderIndices={[0]}
       onScroll={(e)=>{
         // If we are close to the end of the list, we will fetch more data from the server
         var windowHeight = Dimensions.get('window').height,
@@ -130,14 +122,11 @@ export default class ResultListView extends React.Component {
           this.getFoodItems();
         }
     }}
-      scrollEventThrottle={5000}
+      scrollEventThrottle={1000}
       >
-      <View style={styles.selectedContainer}>
-          {this.state.chosenItem? <Image source={{ uri: this.state.chosenItem.images[0] }} style={styles.itemImage} /> : null}
-        </View>
-      {/* {this.state.chosenItem? <Image source={{ uri: this.state.chosenItem.images[0] }} style={styles.itemImage} /> : null} */}
         <FoodSearchBar updateSearch={this.updateSearch} />
-        {this.state.foodItems.map(currentFoodItem => {
+        { // Running over all the results and add them as a result list item
+          this.state.foodItems.map(currentFoodItem => {
           return (
             <TouchableOpacity
               key={currentFoodItem.id}
@@ -145,7 +134,7 @@ export default class ResultListView extends React.Component {
             >
               <ResultListItem
                 foodItem={currentFoodItem}
-                isChosen={
+                isChosen={ // Mark as chosen conditions
                   this.state.chosenItem &&
                   currentFoodItem.id === this.state.chosenItem.id
                 }
@@ -155,7 +144,8 @@ export default class ResultListView extends React.Component {
         })
         }
 
-        { this.state.refreshing ? 
+        { // If we're refreshing (waiting for a response from the server), then we show the indicator
+          this.state.refreshing ? 
             <ActivityIndicator
             size="large"
             color="#0000ff"
@@ -173,10 +163,6 @@ export default class ResultListView extends React.Component {
 
 const styles = StyleSheet.create({
   contentContainer: {
-    // maxHeight: 640,
-    // flex: 1,
-    // flexGrow: 1,
-    // justifyContent: 'space-between',
   },
   footer: {
     padding: 10,
@@ -199,14 +185,11 @@ const styles = StyleSheet.create({
   },
   selectedContainer: {
     alignItems: "center",
-    marginTop: 10,
     marginBottom: 20
   },
   itemImage: {
-    width: 100,
-    height: 100,
+    width: 200,
+    height: 200,
     resizeMode: 'contain',
-    marginTop: 3,
-    marginRight: 10,
   },
 });
